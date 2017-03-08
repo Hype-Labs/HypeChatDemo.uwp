@@ -158,7 +158,8 @@ namespace HypeChatDemo
             Window.Current.Activate();
 
             // Start the Hype framework
-            RequestHypeToStart();        }
+            RequestHypeToStart();
+        }
 
         private void OnSuspending(object sender, SuspendingEventArgs e)
         {

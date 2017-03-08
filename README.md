@@ -291,7 +291,7 @@ private Message SendMessage(String text, Instance instance)
     // When sending content there must be some sort of protocol that both parties
     // understand. In this case, we simply send the text encoded in UTF-8. The data
     // must be decoded when received, using the same encoding.
-    byte[] data = Encoding.ASCII.GetBytes(text);
+    byte[] data = Encoding.UTF8.GetBytes(text);
 
     // Sends the data and returns the message that has been generated for it. Messages have
     // identifiers that are useful for keeping track of the message's deliverability state.
