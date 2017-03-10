@@ -9,7 +9,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using System.Diagnostics;
-using HypeComponent;
+using HypeLabs;
 using HypeChatDemo.Model;
 
 namespace HypeChatDemo
@@ -158,8 +158,7 @@ namespace HypeChatDemo
             Window.Current.Activate();
 
             // Start the Hype framework
-            RequestHypeToStart();
-        }
+            RequestHypeToStart();        }
 
         private void OnSuspending(object sender, SuspendingEventArgs e)
         {

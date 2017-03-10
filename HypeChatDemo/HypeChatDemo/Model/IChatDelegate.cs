@@ -1,4 +1,4 @@
-﻿using HypeComponent;
+﻿using HypeLabs;
 
 namespace HypeChatDemo.Model
 {
