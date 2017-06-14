@@ -32,7 +32,7 @@ Hype is really easy to configure! Double click the `Hype.vsix` binary, which sho
 
 #### 3. Configure your project
 
-After creating the project of your choice, access `References` and then `Add Reference`. On the `Universal Windows` menu, under `Extensions` select the option for `Hype` and click `OK`. You'll also need to access your `Package.appxmanifest` and under the `Capabilities` separator select `Internet(Client & Server)`, `Internet(Client)`, and `Private Networks(Client & Server)`. These are required by the Hype SDK in order to manage Infrastructual Wi-Fi networks.
+After creating the project of your choice, access `References` and then `Add Reference`. On the `Universal Windows` menu, under `Extensions` select the option for `Hype` and click `OK`. You'll also need to access your `Package.appxmanifest` and under the `Capabilities` separator select `Internet(Client & Server)`, `Internet(Client)`, `Bluetooth`, and `Private Networks(Client & Server)`. These are required by the Hype SDK in order to manage Infrastructual Wi-Fi networks.
 
 #### 4. Register an app
 
