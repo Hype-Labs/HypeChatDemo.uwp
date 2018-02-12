@@ -36,17 +36,14 @@ After creating the project of your choice, access `References` and then `Add Ref
 
 #### 4. Register an app
 
-Go to [the apps page](http://hypelabs.io/apps) and create a new app by pressing the _Create new app_ button on the top left. Enter a name for your app and press Submit. The app dialog that appears afterwards yields a 8-digit hexadecimal number, called a _realm_. Keep that number for step 5. Realms are a means of segregating the network, by making sure that different apps do not communicate with each other, even though they are capable of forwarding each other's contents. If your project requires a deeper understanding of how the technology works we recommend reading the [Overview](http://hypelabs.io/docs/ios/overview/) page. There you'll find a more detailed analysis of what realms are and what they do, as well as other topics about the Hype framework.
+Go to [the apps page](http://hypelabs.io/apps) and create a new app by pressing the _Create new app_ button on the top left. Enter a name for your app and press Submit. The app dialog that appears afterwards yields a 8-digit hexadecimal number, called _app identifier_. Keep that number for step 5 . App identifiers are a mean of segregating the network, by making sure that different apps do not communicate with each other, even though they are capable of forwarding each other's contents. If your project requires a deeper understanding of how the technology works we recommend reading the [Overview](http://hypelabs.io/docs/ios/overview/) page. There you'll find a more detailed analysis of what app identifiers are and what they do, as well as other topics about the Hype framework.
 
-#### 5. Setup the realm
+#### 5. Setup the app identifier
 
-The realm must be set when starting the Hype services. For that effect, you can set the `Hype.OptionRealmKey` when starting the framework's services with a `String` value indicating the realm. The following example illustrates how to do this. The 00000000 realm is reserved for testing purposes and apps should not be deployed with this realm.
+The app identifier must be set before starting the Hype services. For that effect, you can call the `Hype.SetAppIdentifier`, before starting the framework's services, with a `String` value indicating the identifier. The following example illustrates how to do this. The 00000000 identifier is reserved for testing purposes and apps should not be deployed with it.
 
 ```cs
-	Hype.Instance.Start(new Dictionary<string, Object>
-            {
-                { Hype.OptionRealmKey, "00000000" },
-            });
+	Hype.SetAppIdentifier("00000000");
 ```
 
 #### 6. Start Hype services
@@ -192,7 +189,7 @@ sealed partial class App : Application, IStateObserver, INetworkObserver, IMessa
 
 ```
 
-This code demonstrates how to add an instance as an Hype observer and starting the framework's services. Observers get notifications from the framework indicating when events happen, such as Hype's lifecycle and receiving messages from other devices. The last line in `OnLaunched(LaunchActivatedEventArgs)` requests Hype to start it's services, by publishing the device on the network and browsing for other devices in proximity. At this point, the framework is still not actively participating on the network, though. Only when the observer method `IStateObserver.OnStart(Hype)` is called is the device actively participating on the network. After that happens, instances can be found at any time if other devices are in proximity. When that happens, the framework triggers a `INetworkObserver.OnInstanceFound(Hype, Instance)` notification, indicating that another peer is ready to communicate. You should keep found instances on a map, as you'll need those later to exchange content. Here's one way how that could be accomplished, while expanding on the previous example:
+This code demonstrates how to add an instance as an Hype observer and starting the framework's services. Observers get notifications from the framework indicating when events happen, such as Hype's lifecycle and receiving messages from other devices. The last line in `OnLaunched(LaunchActivatedEventArgs)` requests Hype to start it's services, by publishing the device on the network and browsing for other devices in proximity. At this point, the framework is still not actively participating on the network, though. Only when the observer method `IStateObserver.OnStart(Hype)` is called is the device actively participating on the network. After that happens, instances can be found at any time if other devices are in proximity. When that happens, the framework triggers a `INetworkObserver.OnInstanceFound(Instance)` notification, indicating that another peer was found. If that peer is already resolved we can immediately communicate with it. Otherwise we have to resolve it before initiating the communication by calling the `Hype.ResolveInstance(Instance)` method. The resolution process implicates an exchange of digital certificates for security purposes. You should keep resolved instances on a map, as you'll need those later to exchange content. Here's one way how that could be accomplished, while expanding on the previous example:
 
 ```cs
 
