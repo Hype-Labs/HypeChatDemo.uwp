@@ -89,7 +89,6 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <None Include="Local.snk" />
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -144,7 +143,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <SDKReference Include="HypeSDK, Version=0.3.1689">
+    <SDKReference Include="HypeSDK, Version=1.0.5">
       <Name>Hype</Name>
     </SDKReference>
   </ItemGroup>
@@ -155,7 +154,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Local.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

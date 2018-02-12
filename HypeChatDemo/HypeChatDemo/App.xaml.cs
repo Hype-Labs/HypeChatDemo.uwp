@@ -186,43 +186,21 @@ namespace HypeChatDemo
 
         public void RequestHypeToStart()
         {
-            // Adding itself as an Hype state observer makes sure that the application gets
-            // notifications for lifecycle events being triggered by the Hype framework. These
-            // events include starting and stopping, as well as some error handling.
-            Hype.Instance.AddStateObserver(this);
+            // Add this as an Hype observer
+            Hype.AddStateObserver(this);
+            Hype.AddNetworkObserver(this);
+            Hype.AddMessageObserver(this);
 
-            // Network observer notifications include other devices entering and leaving the
-            // network. When a device is found all observers get a OnInstanceFound notification,
-            // and when they leave OnInstanceLost is triggered instead.
-            Hype.Instance.AddNetworkObserver(this);
+            // Generate an app identifier in the HypeLabs dashboard (https://hypelabs.io/apps/),
+            // by creating a new app. Copy the given identifier here.
+            Hype.SetAppIdentifier("{{app_identifier}}");
 
-            // I/O notifications indicate when messages are sent, delivered, or fail to be sent.
-            // Notice that a message being sent does not imply that it has been delivered, only
-            // that it has been queued for output. This is especially important when using mesh
-            // networking, as the destination device might not be connect in a direct link.
-            Hype.Instance.AddMessageObserver(this);
-
-            // Requesting Hype to start is equivalent to requesting the device to publish
-            // itself on the network and start browsing for other devices in proximity. If
-            // everything goes well, the OnStart(Hype) observer method gets called, indicating
-            // that the device is actively participating on the network. The 00000000 realm is
-            // reserved for test apps, so it's not recommended that apps are shipped with it.
-            // For generating a realm go to https://hypelabs.io, login, access the dashboard
-            // under the Apps section and click "Create New App". The resulting app should
-            // display a realm number. Copy and paste that here.
-            Hype.Instance.Start(new Dictionary<string, Object>
-            {
-                { Hype.OptionRealmKey, "00000000" },
-            });
+            Hype.Start();
         }
 
         public void RequestHypeToStop()
         {
-            // Stopping the Hype framework does not break existing connections. When the framework
-            // stops, all active connections are kept and found devices are not lost. Stopping means
-            // that no new devices will be found, as the framework won't be looking for them anymore
-            // and that this device is not advertising itself either.
-            Hype.Instance.Stop();
+            Hype.Stop();
         }
 
         /// <summary>
@@ -268,75 +246,88 @@ namespace HypeChatDemo
         /// <param name="sender">The source of the suspend request.</param>
         /// <param name="e">Details about the suspend request.</param>
 
-        void IStateObserver.OnStart(Hype hype)
+        void IStateObserver.OnHypeStart()
         {
-            // At this point, the device is actively participating on the network. Other devices
-            // (instances) can be found at any time and the domestic (this) device can be found
-            // by others. When that happens, the two devices should be ready to communicate.
-            Debug.WriteLine(String.Format("{0}: Hype started", this.GetType().Name));
+            Debug.WriteLine("Hype started!");
         }
 
-        void IStateObserver.OnStop(Hype hype, Error error)
+        void IStateObserver.OnHypeStop(Error error)
         {
             String description = "";
 
             if (error != null)
             {
-
-                // The error parameter will usually be null if the framework stopped because
-                // it was requested to stop. This might not always happen, as even if requested
-                // to stop the framework might do so with an error.
                 description = String.Format("[{0}]", error.GetDescription());
             }
 
-            // The framework has stopped working for some reason. If it was asked to do so (by
-            // calling stop) the error parameter is null. If, on the other hand, it was forced
-            // by some external means, the error parameter indicates the cause. Common causes
-            // include the user turning the adapters off. When the later happens, you shouldn't
-            // attempt to start the Hype services again. Instead, the framework triggers a 
-            // OnReady delegate method call if recovery from the failure becomes possible.
-            Debug.WriteLine(String.Format("{0}: Hype stopped [{1}]", this.GetType().Name, description));
+            Debug.WriteLine(String.Format("Hype stopped [{0}]", description));
         }
 
-        void IStateObserver.OnFailedStarting(Hype hype, Error error)
+        void IStateObserver.OnHypeFailedStarting(Error error)
         {
-            // Hype couldn't start its services. Usually this means that all adapters (Wi-Fi
-            // and Bluetooth) are not on, and as such the device is incapable of participating
-            // on the network. The error parameter indicates the cause for the failure. Attempting
-            // to restart the services is futile at this point. Instead, the implementation should
-            // wait for the framework to trigger a OnReady notification, indicating that recovery
-            // is possible, and start the services then.
-            Debug.WriteLine(String.Format("{0}: Hype failed starting [{1}]", this.GetType().Name, error.GetDescription()));
+            Debug.WriteLine(String.Format("Hype failed starting [{0}]", error.GetDescription()));
         }
 
-        void IStateObserver.OnReady(Hype hype)
+        void IStateObserver.OnHypeReady()
         {
-            Debug.WriteLine(String.Format("{0}: Hype ready!", this.GetType().Name));
+            Debug.WriteLine("Hype ready!");
 
-            // This Hype delegate event indicates that the framework believes that it's capable
-            // of recovering from a previous start failure. This event is only triggered once.
-            // It's not guaranteed that starting the services will result in success, but it's
-            // known to be highly likely. If the services are not needed at this point it's
-            // possible to delay the execution for later, but it's not guaranteed that the
-            // recovery conditions will still hold by then.
             RequestHypeToStart();
         }
 
-        void IStateObserver.OnStateChange(Hype hype)
+        void IStateObserver.OnHypeStateChange()
         {
-            // State change updates are triggered before their corresponding, specific, observer
-            // call. For instance, when Hype starts, it transits to the State.Running state,
-            // triggering a call to this method, and only then is OnStart(Hype) called. Every
-            // such event has a corresponding observer method, so state change notifications
-            // are mostly for convenience. This method is often not used.
+            Debug.WriteLine(String.Format("Hype changed state to [{0}] (Idle=0, Starting=1, Running=2, Stopping=3)", (int)Hype.GetState()));
         }
 
-        void INetworkObserver.OnInstanceFound(Hype hype, Instance instance)
+        bool ShouldResolveInstance(Instance instance)
         {
-            // Hype instances that are participating on the network are identified by a full
-            // UUID, composed by the vendor's realm followed by a unique identifier generated
-            // for each instance.
-            Debug.WriteLine(String.Format("{0}: Found instance: {1}", this.GetType().Name, instance.GetStringIdentifier()));
+            // This method can be used to decide whether an instance is interesting
+            return true;
+        }
+
+        string IStateObserver.OnHypeRequestAccessToken(int userIdentifier)
+        {
+            // Access the app settings (https://hypelabs.io/apps/) to find an access token to use here.
+            return "{{access_token}}";
+        }
+
+        void INetworkObserver.OnHypeInstanceFound(Instance instance)
+        {
+            Debug.WriteLine(String.Format("Hype found instance: {0}", instance.GetStringIdentifier()));
+
+            if(ShouldResolveInstance(instance))
+            {
+                Hype.Resolve(instance);
+            }
+
+        }
+
+        void INetworkObserver.OnHypeInstanceLost(Instance instance, Error error)
+        {
+            Debug.WriteLine(String.Format("Hype lost instance: {0} [{1}]", instance.GetStringIdentifier(), error.GetDescription()));
+          
+            // Cleaning up is always a good idea. It's not possible to communicate with instances
+            // that were previously lost.
+            Stores.Remove(instance.GetStringIdentifier());
+
+            // Update the contact list by dropping the lost contact
+            int index = GetContactIndex(instance.GetStringIdentifier());
+            
+            Contacts.RemoveAt(index);
+
+            // Notifying the contact delegate, which may cause the contacts page to reload.
+            IContactDelegate contactDelegate = GetContactDelegate();
+
+            if (contactDelegate != null)
+            {
+                contactDelegate.OnRemoveContact(index);
+            }
+        }
+
+        void INetworkObserver.OnHypeInstanceResolved(Instance instance)
+        {
+            Debug.WriteLine(String.Format("Hype instance resolved: {0}", instance.GetStringIdentifier()));
 
             // Creates a new contact to add to the contacts list
             Contact contact = new Contact() { Identifier = instance.GetStringIdentifier(), Name = "Description not available" };
@@ -358,37 +349,14 @@ namespace HypeChatDemo
             }
         }
 
-        void INetworkObserver.OnInstanceLost(Hype hype, Instance instance, Error error)
+        void INetworkObserver.OnHypeInstanceFailedResolving(Instance instance, Error error)
         {
-            // An instance being lost means that communicating with it is no longer possible.
-            // This usually happens by the link being broken. This can happen if the connection
-            // times out or the device goes out of range. Another possibility is the user turning
-            // the adapters off, in which case not only are all instances lost but the framework
-            // also stops with an error.
-
-            Debug.WriteLine(String.Format("{0}: Lost instance: {1}", this.GetType().Name, instance.GetStringIdentifier()));
-          
-            // Cleaning up is always a good idea. It's not possible to communicate with instances
-            // that were previously lost.
-            Stores.Remove(instance.GetStringIdentifier());
-
-            // Update the contact list by dropping the lost contact
-            int index = GetContactIndex(instance.GetStringIdentifier());
-            
-            Contacts.RemoveAt(index);
-
-            // Notifying the contact delegate, which may cause the contacts page to reload.
-            IContactDelegate contactDelegate = GetContactDelegate();
-
-            if (contactDelegate != null)
-            {
-                contactDelegate.OnRemoveContact(index);
-            }
+            Debug.WriteLine(String.Format("Hype failed resolving instance: {0} [{1}]", instance.GetStringIdentifier(), error.GetDescription()));
         }
 
-        void IMessageObserver.OnMessageReceived(Hype hype, Message message, Instance instance)
+        void IMessageObserver.OnHypeMessageReceived(Message message, Instance instance)
         {
-            Debug.WriteLine(String.Format("{0}: Got a message from: {1}", this.GetType().Name, instance.GetStringIdentifier()));
+            Debug.WriteLine(String.Format("Hype Got a message from: {0}", instance.GetStringIdentifier()));
 
             IChatDelegate chatDelegate = GetChatDelegate();
             
@@ -417,32 +385,29 @@ namespace HypeChatDemo
             }
         }
 
-        void IMessageObserver.OnMessageFailedSending(Hype hype, MessageInfo messageInfo, Instance instance, Error error)
+        void IMessageObserver.OnHypeMessageFailedSending(MessageInfo messageInfo, Instance instance, Error error)
         {
-            // Sending messages can fail for a lot of reasons, such as the adapters
-            // (Wi-Fi) being turned off by the user while the process of sending the 
-            // data is still ongoing. The error parameter describes the cause for 
-            // the failure.
-            Debug.WriteLine(String.Format("{0}: Failed to send message: {1} ", this.GetType().Name, messageInfo.GetIdentifier()));
+            Debug.WriteLine(String.Format("Hype failed to send message: {0} [{1}] ", messageInfo.GetIdentifier(), error.GetDescription()));
         }
 
-        void IMessageObserver.OnMessageSent(Hype hype, MessageInfo messageInfo, Instance instance, float progress, bool done)
+        void IMessageObserver.OnHypeMessageSent(MessageInfo messageInfo, Instance instance, float progress, bool done)
         {
             // A message being "sent" indicates that it has been written to the output
             // streams. However, the content could still be buffered for output, so it
             // has not necessarily left the device. This is useful to indicate when a
             // message is being processed, but it does not indicate delivery by the
             // destination device.
-            Debug.WriteLine(String.Format("{0}: Message being sent: {1}", this.GetType().Name, progress));
+            Debug.WriteLine(String.Format("Hype is sending a message: {0}",  progress));
         }
 
-        void IMessageObserver.OnMessageDelivered(Hype hype, MessageInfo messageInfo, Instance instance, float progress, bool done)
+        void IMessageObserver.OnHypeMessageDelivered(MessageInfo messageInfo, Instance instance, float progress, bool done)
         {
             // A message being delivered indicates that the destination device has
             // acknowledge reception. If the "done" argument is true, then the message
             // has been fully delivered and the content is available on the destination
             // device. This method is useful for implementing progress bars.
-            Debug.WriteLine(String.Format("{0}: Message being delivered: {1}", this.GetType().Name, progress));
+            Debug.WriteLine(String.Format("Hype delivered a message: {0}", progress));
         }
+
     }
 }

@@ -40,7 +40,7 @@ namespace HypeChatDemo
             // In order to track message delivery set the last parameter to true. Notice that this
             // is not recommend, as it incurs extra overhead on the network. Use this feature only
             // if progress tracking is really necessary.
-            return Hype.Instance.Send(data.AsBuffer(), instance, true);
+            return Hype.Send(data.AsBuffer(), instance, true);
         }
 
         public Store GetStore()
